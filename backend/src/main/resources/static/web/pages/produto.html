@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos Cadastrados</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Produtos Cadastrados</h1>
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descrição</th>
+                    <th>Quantidade</th>
+                    <th>Preço</th>
+                    <th>Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody id="tabelaProdutos">
+
+            </tbody>
+
+        </table>
+
+        <br>
+
+        <h2>Resumo</h2>
+
+        <p>
+            <strong>Modelos cadastrados:</strong>
+            <span id="totalModelos">0</span>
+        </p>
+
+        <p>
+            <strong>Quantidade total:</strong>
+            <span id="quantidadeTotal">0</span>
+        </p>
+
+        <p>
+            <strong>Valor total:</strong>
+            <span id="valorTotal">R$ 0,00</span>
+        </p>
+
+        <br>
+
+        <a href="../../index.html" class="btn btn-primary">
+            Voltar
+        </a>
+
+    </div>
+
+    <script src="../js/script.js"></script>
+
+    <script>
+        carregarProdutos();
+    </script>
+</body>
+
+</html>

@@ -208,3 +208,21 @@ function editarProduto(codigo) {
     alert("Produto atualizado com sucesso!");
 
 }
+
+async function testarAPI() {
+    try {
+        const resposta = await fetch(
+            "https://animated-sniffle-g9xr597q9x53w46-8080.app.github.dev/api/produtos"
+        );
+
+        const produtosAPI = await resposta.json();
+
+        console.log("Produtos recebidos da API:", produtosAPI);
+    
+    } catch (erro) {
+        console.error("Erro ao conectar com a API:", erro);
+    }
+    
+}
+
+testarAPI();

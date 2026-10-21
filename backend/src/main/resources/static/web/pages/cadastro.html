@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Produtos</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Cadastro de Produtos</h1>
+
+        <form onsubmit="cadastrarProduto(event)">
+
+            <label>Código</label>
+            <input type="number" id="codigo" min="1" step="1" required>
+
+            <label>Descrição</label>
+            <input type="text" id="descricao" required>
+
+            <label>Quantidade</label>
+            <input type="number" id="quantidade" min="0" step="1" required>
+
+            <label>Preço</label>
+            <input type="number" min="0" step="0.01" id="preco" required>
+
+            <button type="submit" class="btn btn-sucess">
+                Cadastrar
+            </button>
+
+        </form>
+
+        <br>
+
+        <a href="../../index.html" class="btn btn-primary">
+            Voltar
+        </a>
+
+    </div>
+
+    <script src="../js/script.js"></script>
+
+</body>
+
+</html>
