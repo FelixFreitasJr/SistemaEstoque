@@ -90,14 +90,30 @@ async function carregarProdutos() {
                     <td>${produto.descricao}</td>
                     <td>${produto.quantidade}</td>
                     <td>${Number(produto.preco).toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL"
-            })}</td>
+                        style: "currency",
+                        currency: "BRL"
+                    })}</td>
                     <td>${total.toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL"
-            })}</td>
-                    <td>Em breve</td>
+                        style: "currency",
+                        currency: "BRL"
+                    })}</td>
+                    <td class="acoes">
+                        <button
+                            class="btn-acao btn-editar"
+                            onclick="editarProduto(${produto.codigo})"
+                            title="Editar produto"
+                            aria-label="Editar produto">
+                            ✏
+                        </button>
+
+                        <button
+                            class="btn-acao btn-excluir"
+                            onclick="excluirProduto(${produto.codigo})"
+                            title="Excluir produto"
+                            aria-label="Excluir produto">
+                            ×
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -122,114 +138,102 @@ async function carregarProdutos() {
 }
 
 
-function excluirProduto(codigo) {
+async function editarProduto(codigo) {
+    try {
+        // Busca os produtos na API
+        const respostaConsulta = await fetch("/api/produtos");
 
-    //recuperar os produtos cadastrados
-    let produtos =
-        JSON.parse(localStorage.getItem("produtos")) || [];
+        if (!respostaConsulta.ok) {
+            throw new Error("Não foi possível consultar os produtos.");
+        }
 
-    //confirmar a exclusao
-    const confirmar = confirm(
-        `Deseja excluir o produto ${codigo}?`
-    );
+        const produtos = await respostaConsulta.json();
 
-    if (!confirmar) {
-        return;
+        const produto = produtos.find(
+            item => Number(item.codigo) === Number(codigo)
+        );
+
+        if (!produto) {
+            alert("Produto não encontrado.");
+            return;
+        }
+
+        // Solicita os novos dados
+        const descricao = prompt("Nova descrição:", produto.descricao);
+        if (descricao === null) return;
+
+        const quantidade = prompt("Nova quantidade:", produto.quantidade);
+        if (quantidade === null) return;
+
+        const preco = prompt("Novo preço:", produto.preco);
+        if (preco === null) return;
+
+        const dadosAtualizados = {
+            codigo: Number(codigo),
+            descricao: descricao.trim(),
+            quantidade: Number(quantidade),
+            preco: Number(preco)
+        };
+
+        if (
+            !dadosAtualizados.descricao ||
+            !Number.isInteger(dadosAtualizados.quantidade) ||
+            dadosAtualizados.quantidade < 0 ||
+            !Number.isFinite(dadosAtualizados.preco) ||
+            dadosAtualizados.preco < 0
+        ) {
+            alert("Informe descrição, quantidade inteira não negativa e preço válido.");
+            return;
+        }
+
+        // Envia as alterações para o Java
+        const resposta = await fetch(`/api/produtos/${codigo}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dadosAtualizados)
+        });
+
+        if (!resposta.ok) {
+            throw new Error("Não foi possível atualizar o produto.");
+        }
+
+        alert("Produto atualizado com sucesso!");
+        await carregarProdutos();
+
+    } catch (erro) {
+        console.error("Erro ao editar produto:", erro);
+        alert(erro.message);
     }
-
-    //remove o produto da lista
-    produtos = produtos.filter(item => {
-        return Number(item.codigo) !== Number(codigo);
-    });
-
-    //atualiza os dados armazenados
-    localStorage.setItem(
-        "produtos",
-        JSON.stringify(produtos)
-    );
-
-    //atualiza a tabela e o resumo
-    carregarProdutos();
-
-    alert("Produto excluido com sucesso!");
 }
 
-function editarProduto(codigo) {
-
-    //recupera os produtos cadastrados
-    let produtos =
-        JSON.parse(localStorage.getItem("produtos")) || [];
-
-    //localiza o porduto pelo codigo
-    const produtoEncontrado = produtos.find(item => {
-        return Number(item.codigo) === Number(codigo);
-    });
-
-    //verifica se o produto existe
-    if (!produtoEncontrado) {
-        alert("Produto não encontrado!")
-        return;
-    }
-
-    //solicita os nova dados
-    const novaDescricao = prompt(
-        "Nova descrição:",
-        produtoEncontrado.descricao
+async function excluirProduto(codigo) {
+    const confirmar = confirm(
+        `Deseja realmente excluir o produto ${codigo}?`
     );
 
-    if (novaDescricao === null) {
-        return;
+    if (!confirmar) return;
+
+    try {
+        const resposta = await fetch(`/api/produtos/${codigo}`, {
+            method: "DELETE"
+        });
+
+        if (resposta.status === 404) {
+            alert("Produto não encontrado.");
+            return;
+        }
+
+        if (!resposta.ok) {
+            throw new Error("Não foi possível excluir o produto.");
+        }
+
+        alert("Produto excluído com sucesso!");
+        await carregarProdutos();
+
+    } catch (erro) {
+        console.error("Erro ao excluir produto:", erro);
+        alert(erro.message);
     }
-
-    const novaQuantidade = prompt(
-        "Nova Quantidade:",
-        produtoEncontrado.quantidade
-    );
-
-    if (novaQuantidade === null) {
-        return;
-    }
-
-    const novoPreco = prompt(
-        "Novo Preço:",
-        produtoEncontrado.preco
-    );
-
-    if (novoPreco === null) {
-        return;
-    }
-
-    //converte e valida os dados numericos
-    const quantidade = Number(novaQuantidade);
-    const preco = Number(novoPreco);
-
-    if (
-        novaDescricao.trim() === "" ||
-        novaQuantidade.trim() === "" ||
-        !Number.isInteger(quantidade) ||
-        quantidade < 0 ||
-        novoPreco.trim() === "" ||
-        !Number.isFinite(preco) ||
-        preco < 0
-    ) {
-        alert("Informe valores válidos!");
-        return;
-    }
-
-    //atualizar os dados do produto
-    produtoEncontrado.descricao = novaDescricao.trim();
-    produtoEncontrado.quantidade = novaQuantidade;
-    produtoEncontrado.preco = preco;
-
-    //salva a lista atualizada
-    localStorage.setItem(
-        "produtos",
-        JSON.stringify(produtos)
-    );
-
-    //atualiza a tabela e o resumo
-    carregarProdutos();
-
-    alert("Produto atualizado com sucesso!");
-
 }
