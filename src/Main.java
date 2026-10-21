@@ -33,16 +33,7 @@ public class Main {
                 p.obterSubTotal()
             );
         }
-        
-        int totalProdutos = 0;
-        double valorTotalEstoque = 0;
-        
-        for (Produto p : estoque.listar()){
-            
-            totalProdutos += p.getQuant();
-            valorTotalEstoque += p.obterSubTotal();
-        }
-        
+                        
         System.out.println();
         System.out.println("RESUMO");
         System.out.println("-----------------");
