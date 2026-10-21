@@ -1,100 +1,122 @@
 const produtos = [];
 
-function cadastrarProduto(event) {
+async function cadastrarProduto(event) {
     event.preventDefault();
 
-    //recupera os dados armazenados
-    let produtos =
-        JSON.parse(localStorage.getItem("produtos")) || [];
-
-    //captura os dados do formulario
+    // Captura os dados do formulário
     const codigo = Number(document.getElementById("codigo").value);
-    const descricao = document.getElementById("descricao").value;
+    const descricao = document.getElementById("descricao").value.trim();
     const quantidade = Number(document.getElementById("quantidade").value);
     const preco = Number(document.getElementById("preco").value);
 
-    //verifica se o codigo ja existe
-    const existe = produtos.some(produto => {
-        return Number(produto.codigo) === codigo;
-    });
+    try {
+        // Busca os produtos já cadastrados na API
+        const respostaConsulta = await fetch("/api/produtos");
 
-    //interrompe o cadastro se houver duplicidade
-    if (existe) {
-        alert("Já existe um produto cadastrado com esse código!");
-        return;
+        if (!respostaConsulta.ok) {
+            throw new Error("Não foi possível consultar os produtos.");
+        }
+
+        const produtos = await respostaConsulta.json();
+
+        // Verifica se o código já existe
+        const existe = produtos.some(produto => {
+            return Number(produto.codigo) === codigo;
+        });
+
+        if (existe) {
+            alert("Já existe um produto cadastrado com esse código!");
+            return;
+        }
+
+        // Envia o novo produto para a API Java
+        const respostaCadastro = await fetch("/api/produtos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                codigo,
+                descricao,
+                quantidade,
+                preco
+            })
+        });
+
+        if (!respostaCadastro.ok) {
+            throw new Error("Não foi possível cadastrar o produto.");
+        }
+
+        alert("Produto cadastrado com sucesso!");
+
+        // Limpa os campos do formulário
+        event.target.reset();
+
+    } catch (erro) {
+        console.error("Erro ao cadastrar produto:", erro);
+        alert("Não foi possível cadastrar o produto. Verifique a conexão com a API.");
     }
-
-    //cria o objeto do produto
-    const produto = {
-        codigo,
-        descricao,
-        quantidade,
-        preco
-    };
-
-    produtos.push(produto);
-
-    localStorage.setItem(
-        "produtos",
-        JSON.stringify(produtos)
-    );
-
-    alert("Produto cadastrado com sucesso!");
-
-    event.target.reset();
 }
 
-function carregarProdutos() {
+async function carregarProdutos() {
+    try {
+        // Busca os produtos na API Java
+        const resposta = await fetch("/api/produtos");
 
-    //recupera os produtos armazenados
-    const produtos =
-        JSON.parse(localStorage.getItem("produtos")) || [];
+        if (!resposta.ok) {
+            throw new Error("Falha ao buscar produtos na API.");
+        }
 
-    const tabela =
-        document.getElementById("tabelaProdutos");
+        const produtos = await resposta.json();
 
-    tabela.innerHTML = "";
+        const tabela = document.getElementById("tabelaProdutos");
 
-    let quantidadeTotal = 0;
-    let valorTotal = 0;
+        tabela.innerHTML = "";
 
-    produtos.forEach(produto => {
+        let quantidadeTotal = 0;
+        let valorTotal = 0;
 
-        const total =
-            produto.quantidade * produto.preco;
+        produtos.forEach(produto => {
+            const total = produto.quantidade * produto.preco;
 
-        quantidadeTotal += Number(produto.quantidade);
-        valorTotal += total;
+            quantidadeTotal += Number(produto.quantidade);
+            valorTotal += total;
 
-        tabela.innerHTML += `
-        <tr>
-            <td>${produto.codigo}</td>
-            <td>${produto.descricao}</td>
-            <td>${produto.quantidade}</td>
-            <td>${Number(produto.preco).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        })}</td>
-            <td>${total.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        })}</td>
-        </tr>
-        `;
-    });
-
-    //atualiza o resumo do estoque
-    document.getElementById("totalModelos").textContent =
-        produtos.length;
-
-    document.getElementById("quantidadeTotal").textContent =
-        quantidadeTotal;
-
-    document.getElementById("valorTotal").textContent =
-        valorTotal.toLocaleString("pt-br", {
-            style: "currency",
-            currency: "BRL"
+            tabela.innerHTML += `
+                <tr>
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.quantidade}</td>
+                    <td>${Number(produto.preco).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            })}</td>
+                    <td>${total.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            })}</td>
+                    <td>Em breve</td>
+                </tr>
+            `;
         });
+
+        // Atualiza o resumo do estoque
+        document.getElementById("totalModelos").textContent =
+            produtos.length;
+
+        document.getElementById("quantidadeTotal").textContent =
+            quantidadeTotal;
+
+        document.getElementById("valorTotal").textContent =
+            valorTotal.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            });
+
+    } catch (erro) {
+        console.error("Erro ao carregar produtos:", erro);
+        alert("Não foi possível carregar os produtos da API.");
+    }
 }
 
 function excluirProduto(codigo) {

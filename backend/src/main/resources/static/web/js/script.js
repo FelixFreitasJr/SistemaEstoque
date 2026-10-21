@@ -1,48 +1,63 @@
 const produtos = [];
 
-function cadastrarProduto(event) {
+async function cadastrarProduto(event) {
     event.preventDefault();
 
-    //recupera os dados armazenados
-    let produtos =
-        JSON.parse(localStorage.getItem("produtos")) || [];
-
-    //captura os dados do formulario
+    // Captura os dados do formulário
     const codigo = Number(document.getElementById("codigo").value);
-    const descricao = document.getElementById("descricao").value;
+    const descricao = document.getElementById("descricao").value.trim();
     const quantidade = Number(document.getElementById("quantidade").value);
     const preco = Number(document.getElementById("preco").value);
 
-    //verifica se o codigo ja existe
-    const existe = produtos.some(produto => {
-        return Number(produto.codigo) === codigo;
-    });
+    try {
+        // Busca os produtos já cadastrados na API
+        const respostaConsulta = await fetch("/api/produtos");
 
-    //interrompe o cadastro se houver duplicidade
-    if (existe) {
-        alert("Já existe um produto cadastrado com esse código!");
-        return;
+        if (!respostaConsulta.ok) {
+            throw new Error("Não foi possível consultar os produtos.");
+        }
+
+        const produtos = await respostaConsulta.json();
+
+        // Verifica se o código já existe
+        const existe = produtos.some(produto => {
+            return Number(produto.codigo) === codigo;
+        });
+
+        if (existe) {
+            alert("Já existe um produto cadastrado com esse código!");
+            return;
+        }
+
+        // Envia o novo produto para a API Java
+        const respostaCadastro = await fetch("/api/produtos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                codigo,
+                descricao,
+                quantidade,
+                preco
+            })
+        });
+
+        if (!respostaCadastro.ok) {
+            throw new Error("Não foi possível cadastrar o produto.");
+        }
+
+        alert("Produto cadastrado com sucesso!");
+
+        // Limpa os campos do formulário
+        event.target.reset();
+
+    } catch (erro) {
+        console.error("Erro ao cadastrar produto:", erro);
+        alert("Erro: " + erro.message);
     }
-
-    //cria o objeto do produto
-    const produto = {
-        codigo,
-        descricao,
-        quantidade,
-        preco
-    };
-
-    produtos.push(produto);
-
-    localStorage.setItem(
-        "produtos",
-        JSON.stringify(produtos)
-    );
-
-    alert("Produto cadastrado com sucesso!");
-
-    event.target.reset();
 }
+
 
 
 async function carregarProdutos() {
@@ -75,13 +90,13 @@ async function carregarProdutos() {
                     <td>${produto.descricao}</td>
                     <td>${produto.quantidade}</td>
                     <td>${Number(produto.preco).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL"
-                    })}</td>
+                style: "currency",
+                currency: "BRL"
+            })}</td>
                     <td>${total.toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL"
-                    })}</td>
+                style: "currency",
+                currency: "BRL"
+            })}</td>
                     <td>Em breve</td>
                 </tr>
             `;
@@ -196,7 +211,7 @@ function editarProduto(codigo) {
         novoPreco.trim() === "" ||
         !Number.isFinite(preco) ||
         preco < 0
-    ){
+    ) {
         alert("Informe valores válidos!");
         return;
     }
@@ -218,21 +233,3 @@ function editarProduto(codigo) {
     alert("Produto atualizado com sucesso!");
 
 }
-
-async function testarAPI() {
-    try {
-        const resposta = await fetch(
-            "https://animated-sniffle-g9xr597q9x53w46-8080.app.github.dev/api/produtos"
-        );
-
-        const produtosAPI = await resposta.json();
-
-        console.log("Produtos recebidos da API:", produtosAPI);
-    
-    } catch (erro) {
-        console.error("Erro ao conectar com a API:", erro);
-    }
-    
-}
-
-testarAPI();
